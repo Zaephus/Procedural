@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class PlacementManager : MonoBehaviour {
 
-    public static Action<Dictionary<Vector3, GameObject>> SimulationStarted;
+    public static Action<Dictionary<Vector3, GameObject>, int> SimulationStarted;
 
     [SerializeField]
     private GameObject cellPrefab;
@@ -37,7 +37,7 @@ public class PlacementManager : MonoBehaviour {
     }
 
     private void StartSimulation() {
-        SimulationStarted?.Invoke(cells);
+        SimulationStarted?.Invoke(cells, cells.Count * 10);
         canPlaceCells = false;
     }
 

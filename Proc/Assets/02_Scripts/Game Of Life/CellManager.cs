@@ -11,9 +11,7 @@ public class CellManager : MonoBehaviour {
     [SerializeField]
     private GameObject cellPrefab;
 
-
-    [SerializeField]
-    private int poolAmount = 50;
+    private int poolAmount;
     [SerializeField]
     private Transform pool;
 
@@ -25,8 +23,6 @@ public class CellManager : MonoBehaviour {
 
     [SerializeField]
     private bool isSimulating = false;
-
-    private bool isFillingCellPool = false;
 
     private void Start() {
         PlacementManager.SimulationStarted += StartSimulation;
@@ -46,11 +42,13 @@ public class CellManager : MonoBehaviour {
         
     }
 
-    private void StartSimulation(Dictionary<Vector3, GameObject> _cells) {
+    private void StartSimulation(Dictionary<Vector3, GameObject> _cells, int _poolAmount) {
 
         cells = _cells;
 
-        for(int i = 0; i < poolAmount; i++) {
+        poolAmount = _poolAmount;
+
+        for(int i = 0; i < _poolAmount; i++) {
             GameObject poolCell = Instantiate(cellPrefab, pool.position, Quaternion.identity, pool);
             poolCell.GetComponent<SpriteRenderer>().enabled = false;
             cellPool.Enqueue(poolCell);
@@ -65,15 +63,8 @@ public class CellManager : MonoBehaviour {
         isSimulating = true;
         
         while(isSimulating) {
-
             CalculateCycle();
-
-            // if(!isFillingCellPool && cellPool.Count < 10) {
-            //     StartCoroutine(FillCellPool());
-            // }
-
             yield return new WaitForSeconds(tickTime);
-
         }
 
     }
@@ -82,10 +73,12 @@ public class CellManager : MonoBehaviour {
 
         List<Vector3> emptyNeighbours = new List<Vector3>();
 
-        List<GameObject> cellsToKill = new List<GameObject>();
-        List<Vector3> cellsToInstantiate = new List<Vector3>();
-
+        Dictionary<Vector3, GameObject> cellBuffer = new Dictionary<Vector3, GameObject>();
         foreach(KeyValuePair<Vector3, GameObject> kvp in cells) {
+            cellBuffer.Add(kvp.Key, kvp.Value);
+        }
+
+        foreach(KeyValuePair<Vector3, GameObject> kvp in cellBuffer) {
             
             int neighbourCount = 0;
 
@@ -98,7 +91,7 @@ public class CellManager : MonoBehaviour {
 
                     Vector3 pos = kvp.Key + new Vector3(x, y, 0.0f);
 
-                    if(cells.ContainsKey(pos)) {
+                    if(cellBuffer.ContainsKey(pos)) {
                         neighbourCount++;
                     }
                     else {
@@ -112,7 +105,11 @@ public class CellManager : MonoBehaviour {
 
             if(neighbourCount < 2 || neighbourCount > 3) {
                 GameObject c = kvp.Value;
-                cellsToKill.Add(c);
+                cells.Remove(c.transform.position);
+                c.transform.position = pool.position;
+                c.GetComponent<SpriteRenderer>().enabled = false;
+                c.transform.parent = pool;
+                cellPool.Enqueue(c);
             }
 
         }
@@ -130,7 +127,7 @@ public class CellManager : MonoBehaviour {
 
                     Vector3 pos = emptyNeighbours[i] + new Vector3(x, y, 0.0f);
 
-                    if(emptyNeighbours.Contains(pos)) {
+                    if(cellBuffer.ContainsKey(pos)) {
                         neighbourCount++;
                     }
 
@@ -138,41 +135,14 @@ public class CellManager : MonoBehaviour {
             }
 
             if(neighbourCount == 3) {
-                cellsToInstantiate.Add(emptyNeighbours[i]);
+                GameObject c = cellPool.Dequeue();
+                c.transform.position = emptyNeighbours[i];
+                c.transform.parent = cellContainer;
+                c.GetComponent<SpriteRenderer>().enabled = true;
+                cells.Add(emptyNeighbours[i], c);
             }
 
         }
-
-        for(int i = 0; i < cellsToKill.Count; i++) {
-            cellsToKill[i].transform.position = pool.position;
-            cellsToKill[i].GetComponent<SpriteRenderer>().enabled = false;
-            cellsToKill[i].transform.parent = pool;
-            cellPool.Enqueue(cellsToKill[i]);
-            cells.Remove(cellsToKill[i].transform.position);
-        }
-
-        for(int i = 0; i < cellsToInstantiate.Count; i++) {
-            GameObject c = cellPool.Dequeue();
-            c.transform.position = cellsToInstantiate[i];
-            c.transform.parent = cellContainer;
-            c.GetComponent<SpriteRenderer>().enabled = true;
-            cells.Add(cellsToInstantiate[i], c);
-        }
-
-    }
-
-    private IEnumerator FillCellPool() {
-
-        isFillingCellPool = true;
-
-        while(cellPool.Count <= poolAmount/5) {
-            GameObject poolCell = Instantiate(cellPrefab, pool.position, Quaternion.identity, pool);
-            poolCell.GetComponent<SpriteRenderer>().enabled = false;
-            cellPool.Enqueue(poolCell);
-            yield return new WaitForEndOfFrame();
-        }
-
-        isFillingCellPool = false;
 
     }
     
