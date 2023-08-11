@@ -60,12 +60,13 @@ public class PlacementManager : MonoBehaviour {
 
         if(!cells.ContainsKey(tilePos)) {
             GameObject c = Instantiate(cellPrefab, tilePos, Quaternion.identity, cellContainer);
+            c.name += tilePos.ToString();
             cells.Add(tilePos, c);
         }
     }
 
     private void RemoveCell() {
-        
+
         Vector3 tilePos;
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);

@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class CellManager : MonoBehaviour {
 
-    private Dictionary<Vector3, GameObject> cells = new Dictionary<Vector3, GameObject>();
+    // private Dictionary<Vector3, GameObject> cells = new Dictionary<Vector3, GameObject>();
+    private GameObject[,] cells;
     private Queue<GameObject> cellPool = new Queue<GameObject>();
 
     [SerializeField]
@@ -29,6 +30,8 @@ public class CellManager : MonoBehaviour {
 
     private void Start() {
         PlacementManager.SimulationStarted += StartSimulation;
+
+        cells = new GameObject[fieldSize.x, fieldSize.y];
     }
 
     private void Update() {
@@ -45,7 +48,9 @@ public class CellManager : MonoBehaviour {
 
     private void StartSimulation(Dictionary<Vector3, GameObject> _cells, int _poolAmount) {
 
-        cells = _cells;
+        foreach(KeyValuePair<Vector3, GameObject> kvp in _cells) {
+            cells[(int)kvp.Key.x, (int)kvp.Key.y] = kvp.Value;
+        }
 
         poolAmount = _poolAmount;
         for(int i = 0; i < _poolAmount; i++) {
@@ -70,75 +75,84 @@ public class CellManager : MonoBehaviour {
 
     private void CalculateCycle() {
 
-        List<Vector3> emptyNeighbours = new List<Vector3>();
+        GameObject[,] cellBuffer = (GameObject[,])cells.Clone();
 
-        Dictionary<Vector3, GameObject> cellBuffer = new Dictionary<Vector3, GameObject>();
-        foreach(KeyValuePair<Vector3, GameObject> kvp in cells) {
-            cellBuffer.Add(kvp.Key, kvp.Value);
-        }
+        for(int x = 0; x < fieldSize.x; x++) {
+            for(int y = 0; y < fieldSize.y; y++) {
 
-        foreach(KeyValuePair<Vector3, GameObject> kvp in cellBuffer) {
-            
-            int neighbourCount = 0;
+                GameObject cell = cellBuffer[x, y];
 
-            for(int x = -1; x <= 1; x++) {
-                for(int y = -1; y <= 1; y++) {
+                if(cell != null) {
 
-                    if(x == 0 && y == 0) {
-                        continue;
-                    }
+                    int neighbourCount = 0;
 
-                    Vector3 pos = kvp.Key + new Vector3(x, y, 0.0f);
+                    for(int i = -1; i < 2; i++) {
+                        for(int j = -1; j < 2; j++) {
 
-                    if(cellBuffer.ContainsKey(pos)) {
-                        neighbourCount++;
-                    }
-                    else {
-                        if(!emptyNeighbours.Contains(pos)) {
-                            emptyNeighbours.Add(pos);
+                            if(i == 0 && j == 0) {
+                                continue;
+                            }
+
+                            Vector2Int neighbourPos = new Vector2Int((x + i) % (fieldSize.x), (y + j) % (fieldSize.y));
+                            neighbourPos = neighbourPos.x == -1 ? neighbourPos = new Vector2Int(fieldSize.x-1, neighbourPos.y) : neighbourPos;
+                            neighbourPos = neighbourPos.x == fieldSize.x ? neighbourPos = new Vector2Int(0, neighbourPos.y) : neighbourPos;
+                            
+                            neighbourPos = neighbourPos.y == -1 ? neighbourPos = new Vector2Int(neighbourPos.x, fieldSize.y-1) : neighbourPos;
+                            neighbourPos = neighbourPos.y == fieldSize.y ? neighbourPos = new Vector2Int(neighbourPos.x, 0) : neighbourPos;
+                            
+                            if(cellBuffer[neighbourPos.x, neighbourPos.y] != null) {
+                                neighbourCount++;
+                            }
+
                         }
                     }
 
-                }
-            }
+                    if(neighbourCount < 2 || neighbourCount > 3) {
 
-            if(neighbourCount < 2 || neighbourCount > 3) {
-                GameObject c = kvp.Value;
-                cells.Remove(c.transform.position);
-                c.transform.position = pool.position;
-                c.GetComponent<SpriteRenderer>().enabled = false;
-                c.transform.parent = pool;
-                cellPool.Enqueue(c);
-            }
+                        cells[x, y] = null;
 
-        }
-
-        for(int i = 0; i < emptyNeighbours.Count; i++) {
-
-            int neighbourCount = 0;
-
-            for(int x = -1; x <= 1; x++) {
-                for(int y = -1; y <= 1; y++) {
-
-                    if(x == 0 && y == 0) {
-                        continue;
-                    }
-
-                    Vector3 pos = emptyNeighbours[i] + new Vector3(x, y, 0.0f);
-
-                    if(cellBuffer.ContainsKey(pos)) {
-                        neighbourCount++;
+                        cell.transform.position = pool.position;
+                        cell.GetComponent<SpriteRenderer>().enabled = false;
+                        cell.transform.parent = pool;
+                        cellPool.Enqueue(cell);
                     }
 
                 }
-            }
+                else {
 
-            if(neighbourCount == 3) {
-                GameObject c = cellPool.Dequeue();
-                c.transform.position = emptyNeighbours[i];
-                c.transform.parent = cellContainer;
-                c.GetComponent<SpriteRenderer>().enabled = true;
-                cells.Add(emptyNeighbours[i], c);
+                    int neighbourCount = 0;
+
+                    for(int i = -1; i < 2; i++) {
+                        for(int j = -1; j < 2; j++) {
+
+                            if(i == 0 && j == 0) {
+                                continue;
+                            }
+
+                            Vector2Int neighbourPos = new Vector2Int((x + i) % (fieldSize.x), (y + j) % (fieldSize.y));
+                            neighbourPos = neighbourPos.x == -1 ? neighbourPos = new Vector2Int(fieldSize.x-1, neighbourPos.y) : neighbourPos;
+                            neighbourPos = neighbourPos.x == fieldSize.x ? neighbourPos = new Vector2Int(0, neighbourPos.y) : neighbourPos;
+                            
+                            neighbourPos = neighbourPos.y == -1 ? neighbourPos = new Vector2Int(neighbourPos.x, fieldSize.y-1) : neighbourPos;
+                            neighbourPos = neighbourPos.y == fieldSize.y ? neighbourPos = new Vector2Int(neighbourPos.x, 0) : neighbourPos;
+
+                            if(cellBuffer[neighbourPos.x, neighbourPos.y] != null) {
+                                neighbourCount++;
+                            }
+
+                        }
+                    }
+
+                    if(neighbourCount == 3) {
+                        GameObject c = cellPool.Dequeue();
+                        c.transform.position = new Vector3(x, y, 0.0f);
+                        c.transform.parent = cellContainer;
+                        c.GetComponent<SpriteRenderer>().enabled = true;
+                        cells[x, y] = c;
+                    }
+
+                }
+
             }
 
         }

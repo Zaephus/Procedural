@@ -183,7 +183,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 036e1843aba4ea04e99181fbdc20223a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fieldSize: {x: 0, y: 0}
+  fieldSize: {x: 47, y: 47}
   cellPrefab: {fileID: 4349423770613633518, guid: bbe3fd266e7abf944aade28f5b9f6e66,
     type: 3}
   pool: {fileID: 400988234}
