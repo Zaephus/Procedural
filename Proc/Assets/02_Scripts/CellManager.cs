@@ -9,6 +9,9 @@ public class CellManager : MonoBehaviour {
     private Queue<GameObject> cellPool = new Queue<GameObject>();
 
     [SerializeField]
+    private Vector2Int fieldSize;
+
+    [SerializeField]
     private GameObject cellPrefab;
 
     private int poolAmount;
@@ -35,9 +38,7 @@ public class CellManager : MonoBehaviour {
         }
 
         if(cellPool.Count < poolAmount*0.2f) {
-            GameObject poolCell = Instantiate(cellPrefab, pool.position, Quaternion.identity, pool);
-            poolCell.GetComponent<SpriteRenderer>().enabled = false;
-            cellPool.Enqueue(poolCell);
+            AddCellToPool();
         }
         
     }
@@ -47,14 +48,12 @@ public class CellManager : MonoBehaviour {
         cells = _cells;
 
         poolAmount = _poolAmount;
-
         for(int i = 0; i < _poolAmount; i++) {
-            GameObject poolCell = Instantiate(cellPrefab, pool.position, Quaternion.identity, pool);
-            poolCell.GetComponent<SpriteRenderer>().enabled = false;
-            cellPool.Enqueue(poolCell);
+            AddCellToPool();
         }
 
         StartCoroutine(Simulate());
+        PlacementManager.SimulationStarted -= StartSimulation;
         
     }
 
@@ -144,6 +143,12 @@ public class CellManager : MonoBehaviour {
 
         }
 
+    }
+
+    private void AddCellToPool() {
+        GameObject poolCell = Instantiate(cellPrefab, pool.position, Quaternion.identity, pool);
+        poolCell.GetComponent<SpriteRenderer>().enabled = false;
+        cellPool.Enqueue(poolCell);
     }
     
 }

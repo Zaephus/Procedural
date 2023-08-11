@@ -42,12 +42,21 @@ public class PlacementManager : MonoBehaviour {
     }
 
     private void PlaceCell() {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector3 tilePos = new Vector3(
-            Mathf.Round(mousePos.x),
-            Mathf.Round(mousePos.y),
-            0.0f
-        );
+
+        Vector3 tilePos;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if(Physics.Raycast(ray, out hit)) {
+            tilePos = new Vector3(
+                Mathf.Round(hit.point.x),
+                Mathf.Round(hit.point.y),
+                hit.point.z
+            );
+        }
+        else {
+            return;
+        }
 
         if(!cells.ContainsKey(tilePos)) {
             GameObject c = Instantiate(cellPrefab, tilePos, Quaternion.identity, cellContainer);
@@ -56,12 +65,21 @@ public class PlacementManager : MonoBehaviour {
     }
 
     private void RemoveCell() {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector3 tilePos = new Vector3(
-            Mathf.Round(mousePos.x),
-            Mathf.Round(mousePos.y),
-            0.0f
-        );
+        
+        Vector3 tilePos;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if(Physics.Raycast(ray, out hit)) {
+            tilePos = new Vector3(
+                Mathf.Round(hit.point.x),
+                Mathf.Round(hit.point.y),
+                hit.point.z
+            );
+        }
+        else {
+            return;
+        }
 
         if(cells.ContainsKey(tilePos)) {
             Destroy(cells[tilePos]);
