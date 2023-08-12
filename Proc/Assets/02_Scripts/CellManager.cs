@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class CellManager : MonoBehaviour {
 
-    // private Dictionary<Vector3, GameObject> cells = new Dictionary<Vector3, GameObject>();
     private GameObject[,] cells;
     private Queue<GameObject> cellPool = new Queue<GameObject>();
 
@@ -24,9 +23,8 @@ public class CellManager : MonoBehaviour {
     
     [SerializeField]
     private float tickTime = 0.2f;
-
     [SerializeField]
-    private bool isSimulating = false;
+    private int iterationAmount;
 
     private void Start() {
         PlacementManager.SimulationStarted += StartSimulation;
@@ -36,17 +34,13 @@ public class CellManager : MonoBehaviour {
 
     private void Update() {
 
-        if(Input.GetKeyDown(KeyCode.Escape)) {
-            isSimulating = false;
-        }
-
         if(cellPool.Count < poolAmount*0.2f) {
             AddCellToPool();
         }
         
     }
 
-    private void StartSimulation(Dictionary<Vector3, GameObject> _cells, int _poolAmount) {
+    private void StartSimulation(Dictionary<Vector3, GameObject> _cells, int _poolAmount, int _iterations) {
 
         foreach(KeyValuePair<Vector3, GameObject> kvp in _cells) {
             cells[(int)kvp.Key.x, (int)kvp.Key.y] = kvp.Value;
@@ -57,16 +51,16 @@ public class CellManager : MonoBehaviour {
             AddCellToPool();
         }
 
+        iterationAmount = _iterations;
+
         StartCoroutine(Simulate());
         PlacementManager.SimulationStarted -= StartSimulation;
         
     }
 
     private IEnumerator Simulate() {
-
-        isSimulating = true;
         
-        while(isSimulating) {
+        for(int i = 0; i < iterationAmount; i++) {
             CalculateCycle();
             yield return new WaitForSeconds(tickTime);
         }
@@ -84,28 +78,7 @@ public class CellManager : MonoBehaviour {
 
                 if(cell != null) {
 
-                    int neighbourCount = 0;
-
-                    for(int i = -1; i < 2; i++) {
-                        for(int j = -1; j < 2; j++) {
-
-                            if(i == 0 && j == 0) {
-                                continue;
-                            }
-
-                            Vector2Int neighbourPos = new Vector2Int((x + i) % (fieldSize.x), (y + j) % (fieldSize.y));
-                            neighbourPos = neighbourPos.x == -1 ? neighbourPos = new Vector2Int(fieldSize.x-1, neighbourPos.y) : neighbourPos;
-                            neighbourPos = neighbourPos.x == fieldSize.x ? neighbourPos = new Vector2Int(0, neighbourPos.y) : neighbourPos;
-                            
-                            neighbourPos = neighbourPos.y == -1 ? neighbourPos = new Vector2Int(neighbourPos.x, fieldSize.y-1) : neighbourPos;
-                            neighbourPos = neighbourPos.y == fieldSize.y ? neighbourPos = new Vector2Int(neighbourPos.x, 0) : neighbourPos;
-                            
-                            if(cellBuffer[neighbourPos.x, neighbourPos.y] != null) {
-                                neighbourCount++;
-                            }
-
-                        }
-                    }
+                    int neighbourCount = GetNeighbourAmount(x, y, ref cellBuffer);
 
                     if(neighbourCount < 2 || neighbourCount > 3) {
 
@@ -120,28 +93,7 @@ public class CellManager : MonoBehaviour {
                 }
                 else {
 
-                    int neighbourCount = 0;
-
-                    for(int i = -1; i < 2; i++) {
-                        for(int j = -1; j < 2; j++) {
-
-                            if(i == 0 && j == 0) {
-                                continue;
-                            }
-
-                            Vector2Int neighbourPos = new Vector2Int((x + i) % (fieldSize.x), (y + j) % (fieldSize.y));
-                            neighbourPos = neighbourPos.x == -1 ? neighbourPos = new Vector2Int(fieldSize.x-1, neighbourPos.y) : neighbourPos;
-                            neighbourPos = neighbourPos.x == fieldSize.x ? neighbourPos = new Vector2Int(0, neighbourPos.y) : neighbourPos;
-                            
-                            neighbourPos = neighbourPos.y == -1 ? neighbourPos = new Vector2Int(neighbourPos.x, fieldSize.y-1) : neighbourPos;
-                            neighbourPos = neighbourPos.y == fieldSize.y ? neighbourPos = new Vector2Int(neighbourPos.x, 0) : neighbourPos;
-
-                            if(cellBuffer[neighbourPos.x, neighbourPos.y] != null) {
-                                neighbourCount++;
-                            }
-
-                        }
-                    }
+                    int neighbourCount = GetNeighbourAmount(x, y, ref cellBuffer);
 
                     if(neighbourCount == 3) {
                         GameObject c = cellPool.Dequeue();
@@ -156,6 +108,35 @@ public class CellManager : MonoBehaviour {
             }
 
         }
+
+    }
+
+    private int GetNeighbourAmount(int _x, int _y, ref GameObject[,] _buffer) {
+
+        int neighbourCount = 0;
+
+        for(int i = -1; i < 2; i++) {
+            for(int j = -1; j < 2; j++) {
+
+                if(i == 0 && j == 0) {
+                    continue;
+                }
+
+                Vector2Int neighbourPos = new Vector2Int((_x + i) % (fieldSize.x), (_y + j) % (fieldSize.y));
+                neighbourPos = neighbourPos.x == -1 ? neighbourPos = new Vector2Int(fieldSize.x-1, neighbourPos.y) : neighbourPos;
+                neighbourPos = neighbourPos.x == fieldSize.x ? neighbourPos = new Vector2Int(0, neighbourPos.y) : neighbourPos;
+                
+                neighbourPos = neighbourPos.y == -1 ? neighbourPos = new Vector2Int(neighbourPos.x, fieldSize.y-1) : neighbourPos;
+                neighbourPos = neighbourPos.y == fieldSize.y ? neighbourPos = new Vector2Int(neighbourPos.x, 0) : neighbourPos;
+
+                if(_buffer[neighbourPos.x, neighbourPos.y] != null) {
+                    neighbourCount++;
+                }
+
+            }
+        }
+
+        return neighbourCount;
 
     }
 

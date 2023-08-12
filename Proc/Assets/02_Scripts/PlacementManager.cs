@@ -1,12 +1,13 @@
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class PlacementManager : MonoBehaviour {
 
-    public static Action<Dictionary<Vector3, GameObject>, int> SimulationStarted;
+    public static System.Action<Dictionary<Vector3, GameObject>, int, int> SimulationStarted;
 
     [SerializeField]
     private GameObject cellPrefab;
@@ -16,29 +17,35 @@ public class PlacementManager : MonoBehaviour {
 
     private Dictionary<Vector3, GameObject> cells = new Dictionary<Vector3, GameObject>();
 
-    private bool canPlaceCells = true;
+    [SerializeField]
+    private Slider iterationSlider;
+    [SerializeField]
+    private TMP_Text iterationText;
+    [SerializeField]
+    private Vector2Int iterationRange;
+    private int iterations;
 
-    private void Start() {}
-
-    private void Update() {
-        if(canPlaceCells) {
-            if(Input.GetMouseButtonDown(0)) {
-                PlaceCell();
-            }
-
-            if(Input.GetMouseButtonDown(1)) {
-                RemoveCell();
-            }
-
-            if(Input.GetKeyDown(KeyCode.Return)) {
-                StartSimulation();
-            }
-        }
+    private void Start() {
+        iterationSlider.minValue = iterationRange.x;
+        iterationSlider.maxValue = iterationRange.y;
     }
 
-    private void StartSimulation() {
-        SimulationStarted?.Invoke(cells, cells.Count * 10);
-        canPlaceCells = false;
+    private void Update() {
+        if(Input.GetMouseButtonDown(0)) {
+            PlaceCell();
+        }
+        if(Input.GetMouseButtonDown(1)) {
+            RemoveCell();
+        }
+
+        iterations = (int)iterationSlider.value;
+        iterationText.text = $"Iterations: {iterations}";
+
+    }
+
+    public void StartSimulation() {
+        SimulationStarted?.Invoke(cells, cells.Count * 10, iterations);
+        gameObject.SetActive(false);
     }
 
     private void PlaceCell() {
