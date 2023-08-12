@@ -16,13 +16,19 @@ public class TextureGenerator : MonoBehaviour {
     [SerializeField]
     private int blurIterations;
 
-    private float avgR = 0;
-    private float avgG = 0;
-    private float avgB = 0;
-    private float avgA = 0;
+    [SerializeField]
+    private float beforeLerpWaitTime = 1.0f;
+
+    [SerializeField]
+    private float lerpSpeed;
+
+    [SerializeField]
+    private TerrainGenerator terrainGenerator;
+
+    private float avgR, avgG, avgB = 0;
     private float blurPixelCount = 0;
 
-    public void GenerateTexture(GameObject[,] _cells) {
+    public IEnumerator GenerateTexture(GameObject[,] _cells) {
 
         Texture2D texture = new Texture2D(_cells.GetLength(0), _cells.GetLength(1));
         texture.filterMode = FilterMode.Point;
@@ -39,6 +45,8 @@ public class TextureGenerator : MonoBehaviour {
         }
         texture.Apply();
         noiseMat.SetTexture("_Texture", texture);
+
+        yield return new WaitForEndOfFrame();
 
         Texture2D blurTexture = new Texture2D(_cells.GetLength(0) * 5, _cells.GetLength(1) * 5);
         blurTexture.filterMode = FilterMode.Point;
@@ -57,6 +65,25 @@ public class TextureGenerator : MonoBehaviour {
         noiseMat.SetTexture("_BlurTexture", blurTexture);
 
         field.GetComponent<MeshRenderer>().material = noiseMat;
+
+        noiseMat.SetFloat("_MixAmount", 0.0f);
+
+        yield return new WaitForSeconds(beforeLerpWaitTime);
+
+        float lerpValue = 0.0f;
+
+        while(lerpValue < 1.0f) {
+            noiseMat.SetFloat("_MixAmount", lerpValue);
+            lerpValue += lerpSpeed * Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+
+        noiseMat.SetFloat("_MixAmount", 1.0f);
+
+        field.gameObject.SetActive(false);
+
+        terrainGenerator.StartCoroutine(terrainGenerator.GenerateTerrain(blurTexture));
+
     }
 
     private Texture2D GenerateBlurTexture(Texture2D _image){

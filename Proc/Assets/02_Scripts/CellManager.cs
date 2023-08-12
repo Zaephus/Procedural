@@ -65,13 +65,13 @@ public class CellManager : MonoBehaviour {
     private IEnumerator Simulate() {
         
         for(int i = 0; i < iterationAmount; i++) {
-            CalculateCycle();
             yield return new WaitForSeconds(tickTime);
+            CalculateCycle();
         }
 
         pool.gameObject.SetActive(false);
         cellContainer.gameObject.SetActive(false);
-        textureGenerator.GenerateTexture(cells);
+        textureGenerator.StartCoroutine(textureGenerator.GenerateTexture(cells));
 
     }
 
