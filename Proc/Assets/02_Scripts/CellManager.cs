@@ -8,6 +8,8 @@ public class CellManager : MonoBehaviour {
     private GameObject[,] cells;
     private Queue<GameObject> cellPool = new Queue<GameObject>();
 
+    private TextureGenerator textureGenerator;
+
     [SerializeField]
     private Vector2Int fieldSize;
 
@@ -28,6 +30,8 @@ public class CellManager : MonoBehaviour {
 
     private void Start() {
         PlacementManager.SimulationStarted += StartSimulation;
+
+        textureGenerator = GetComponent<TextureGenerator>();
 
         cells = new GameObject[fieldSize.x, fieldSize.y];
     }
@@ -64,6 +68,10 @@ public class CellManager : MonoBehaviour {
             CalculateCycle();
             yield return new WaitForSeconds(tickTime);
         }
+
+        pool.gameObject.SetActive(false);
+        cellContainer.gameObject.SetActive(false);
+        textureGenerator.GenerateTexture(cells);
 
     }
 
