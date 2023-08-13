@@ -18,6 +18,8 @@ public class TextureGenerator : MonoBehaviour {
 
     [SerializeField]
     private float beforeLerpWaitTime = 1.0f;
+    [SerializeField]
+    private float afterLerpWaitTime = 1.0f;
 
     [SerializeField]
     private float lerpSpeed;
@@ -79,6 +81,8 @@ public class TextureGenerator : MonoBehaviour {
         }
 
         noiseMat.SetFloat("_MixAmount", 1.0f);
+
+        yield return new WaitForSeconds(afterLerpWaitTime);
 
         field.gameObject.SetActive(false);
 

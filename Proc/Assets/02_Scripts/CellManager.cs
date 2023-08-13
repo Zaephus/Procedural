@@ -65,8 +65,8 @@ public class CellManager : MonoBehaviour {
     private IEnumerator Simulate() {
         
         for(int i = 0; i < iterationAmount; i++) {
-            yield return new WaitForSeconds(tickTime);
             CalculateCycle();
+            yield return new WaitForSeconds(tickTime);
         }
 
         pool.gameObject.SetActive(false);
